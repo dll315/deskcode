@@ -104,7 +104,7 @@ function scrollToSection(id) { state.view = "home"; render(); setTimeout(() => d
 function toggleTheme() {
   state.theme = !state.theme;
   localStorage.setItem("deskcode-theme", state.theme ? "dark" : "light");
-  document.body.classList.toggle("dark-theme", state.theme);
+  document.documentElement.dataset.theme = state.theme ? "dark" : "light";
   render();
 }
 function openSearch() { const query = prompt("搜索文章"); if (query !== null) { state.query = query.trim(); state.category = "全部"; render(); document.querySelector("#writing")?.scrollIntoView({ behavior: "smooth" }); } }
@@ -122,7 +122,7 @@ function submitLogin(event) {
     closeLogin();
     state.view = "admin";
     history.pushState({}, "", adminPath());
-    document.body.classList.toggle("dark-theme", state.theme);
+    document.documentElement.dataset.theme = state.theme ? "dark" : "light";
     render();
     return;
   }
