@@ -25,11 +25,11 @@ const posts = [
 ];
 
 const icon = (name) => ({
-  search: "⌕", moon: "◐", arrow: "↗", edit: "✎", grid: "▦", posts: "▤", chart: "⌁", comment: "◌", settings: "⚙", plus: "+"
+  search: "⌕", moon: "◐", sun: "☼", arrow: "↗", edit: "✎", grid: "▦", posts: "▤", chart: "⌁", comment: "◌", settings: "⚙", plus: "+"
 }[name] || "·");
 
 const isAdminRoute = () => window.location.pathname.replace(/\/+$/, "").endsWith("/admin") || window.location.hash === "#/admin";
-const state = { view: isAdminRoute() ? "admin" : "home", category: "全部", query: "", adminTab: "概览", theme: false, authenticated: localStorage.getItem("deskcode-admin") === "true" };
+const state = { view: isAdminRoute() ? "admin" : "home", category: "全部", query: "", adminTab: "概览", theme: localStorage.getItem("deskcode-theme") === "dark", authenticated: localStorage.getItem("deskcode-admin") === "true" };
 const app = document.querySelector("#app");
 
 function header() {
@@ -42,8 +42,7 @@ function header() {
     </nav>
     <div class="toolbar">
       <button class="icon-btn" title="搜索" onclick="openSearch()">${icon("search")}</button>
-      <button class="icon-btn" title="切换主题" onclick="toggleTheme()">${icon("moon")}</button>
-      <a class="admin-btn" href="${adminPath()}" onclick="goAdmin(event)"><span>${icon("grid")}</span><b>管理后台</b></a>
+      <button class="icon-btn theme-btn" title="${state.theme ? "切换到日间模式" : "切换到夜间模式"}" aria-label="${state.theme ? "切换到日间模式" : "切换到夜间模式"}" onclick="toggleTheme()">${state.theme ? icon("sun") : icon("moon")}</button>
     </div>
   </header>`;
 }
@@ -102,7 +101,12 @@ function openArticle(id) { state.view = "article"; state.articleId = id; render(
 function setCategory(category) { state.category = category; render(); document.querySelector("#writing")?.scrollIntoView({ behavior: "smooth" }); }
 function setAdminTab(tab) { state.adminTab = tab; render(); }
 function scrollToSection(id) { state.view = "home"; render(); setTimeout(() => document.querySelector(`#${id}`)?.scrollIntoView({ behavior: "smooth" }), 0); }
-function toggleTheme() { state.theme = !state.theme; document.body.classList.toggle("warm", state.theme); }
+function toggleTheme() {
+  state.theme = !state.theme;
+  localStorage.setItem("deskcode-theme", state.theme ? "dark" : "light");
+  document.body.classList.toggle("dark-theme", state.theme);
+  render();
+}
 function openSearch() { const query = prompt("搜索文章"); if (query !== null) { state.query = query.trim(); state.category = "全部"; render(); document.querySelector("#writing")?.scrollIntoView({ behavior: "smooth" }); } }
 function openLogin() {
   document.body.insertAdjacentHTML("beforeend", `<div class="overlay" id="login"><div class="modal login-modal"><div class="login-brand"><div class="mark">林</div><div><strong>管理后台</strong><small>LIN MO'S DIGITAL GARDEN</small></div></div><h2>欢迎回来</h2><p class="login-hint">登录后管理你的文章与内容。</p><form onsubmit="submitLogin(event)"><div class="field"><label>管理员账号</label><input id="admin-user" autocomplete="username" placeholder="输入账号" required /></div><div class="field"><label>密码</label><input id="admin-pass" type="password" autocomplete="current-password" placeholder="输入密码" required /></div><p class="login-error" id="login-error"></p><button class="primary-btn login-submit" type="submit">登录后台 ${icon("arrow")}</button></form><button class="close login-close" onclick="closeLogin()">×</button></div></div>`);
@@ -118,6 +122,7 @@ function submitLogin(event) {
     closeLogin();
     state.view = "admin";
     history.pushState({}, "", adminPath());
+    document.body.classList.toggle("dark-theme", state.theme);
     render();
     return;
   }
