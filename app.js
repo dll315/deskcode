@@ -28,7 +28,8 @@ const icon = (name) => ({
   search: "⌕", moon: "◐", arrow: "↗", edit: "✎", grid: "▦", posts: "▤", chart: "⌁", comment: "◌", settings: "⚙", plus: "+"
 }[name] || "·");
 
-const state = { view: "home", category: "全部", query: "", adminTab: "概览", theme: false, authenticated: localStorage.getItem("deskcode-admin") === "true" };
+const isAdminRoute = () => window.location.pathname.replace(/\/+$/, "").endsWith("/admin") || window.location.hash === "#/admin";
+const state = { view: isAdminRoute() ? "admin" : "home", category: "全部", query: "", adminTab: "概览", theme: false, authenticated: localStorage.getItem("deskcode-admin") === "true" };
 const app = document.querySelector("#app");
 
 function header() {
@@ -42,7 +43,7 @@ function header() {
     <div class="toolbar">
       <button class="icon-btn" title="搜索" onclick="openSearch()">${icon("search")}</button>
       <button class="icon-btn" title="切换主题" onclick="toggleTheme()">${icon("moon")}</button>
-      <button class="admin-btn" onclick="goAdmin()"><span>${icon("grid")}</span><b>管理后台</b></button>
+      <a class="admin-btn" href="${adminPath()}" onclick="goAdmin(event)"><span>${icon("grid")}</span><b>管理后台</b></a>
     </div>
   </header>`;
 }
@@ -81,13 +82,19 @@ function adminContent() {
 }
 
 function render() { app.innerHTML = header() + (state.view === "admin" ? adminView() : state.view === "article" ? articleView(posts.find(p => p.id === state.articleId)) : homeView()); }
-function goHome() { state.view = "home"; render(); window.scrollTo(0, 0); }
-function goAdmin() {
+function adminPath() {
+  const base = window.location.pathname.replace(/\/+$/, "").replace(/\/admin$/, "");
+  return `${base || ""}/admin`;
+}
+function goHome() { state.view = "home"; history.pushState({}, "", window.location.pathname.replace(/\/admin$/, "") || "/"); render(); window.scrollTo(0, 0); }
+function goAdmin(event) {
+  event?.preventDefault();
   if (!state.authenticated) {
     openLogin();
     return;
   }
   state.view = "admin";
+  history.pushState({}, "", adminPath());
   render();
   window.scrollTo(0, 0);
 }
@@ -110,6 +117,7 @@ function submitLogin(event) {
     localStorage.setItem("deskcode-admin", "true");
     closeLogin();
     state.view = "admin";
+    history.pushState({}, "", adminPath());
     render();
     return;
   }
@@ -126,3 +134,4 @@ function openEditor() { document.body.insertAdjacentHTML("beforeend", `<div clas
 function closeEditor() { document.querySelector("#editor")?.remove(); }
 function publishEditor() { closeEditor(); alert("文章已发布（演示）"); }
 render();
+if (state.view === "admin" && !state.authenticated) openLogin();
